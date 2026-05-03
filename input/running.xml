@@ -1,0 +1,91 @@
+<speak>
+Başlıyoruz! <break time="1s"/> Nefes al <break time="3s"/> hazır ol. <break time="3s"/>
+On <break time="1s"/>
+    dokuz<break time="1s"/> sekiz<break time="1s"/> yedi<break time="1s"/> altı<break time="1s"/> beş<break time="1s"/> dört<break time="1s"/> üç<break time="1s"/> iki<break time="1s"/> bir<break time="1s"/>
+Hadi koşuya! <break time="3s"/>
+
+<!-- RUN 1 (3:00) -->
+Koş! <break time="3s"/>
+Enerji tam adımlar net.<break time="10s"/>
+Ritim tut devam et.<break time="10s"/>
+Birinci dakika başladı.<break time="10s"/>
+1<break time="1s"/>2<break time="1s"/>3<break time="1s"/>4 tempo tut.<break time="10s"/>
+Nefesini kontrol et.<break time="10s"/>
+Bir dakika tamam.<break time="10s"/>
+İkinci dakika başladı.<break time="10s"/>
+Adımların çok iyi.<break time="10s"/>
+100 adım daha.<break time="10s"/>
+İki dakika geçti.<break time="10s"/>
+Son bir dakika.<break time="10s"/>
+Hızını artır.<break time="10s"/>
+Son 30 saniye.<break time="10s"/>
+Son 10 adım.<break time="10s"/>
+5 <break time="1s"/> 4 <break time="1s"/> 3 <break time="1s"/> 2 <break time="1s"/> 1 <break time="1s"/>
+Harika koştun. <break time="3s"/>
+
+<!-- WALK 1 (1:00) -->
+Yürü! <break time="3s"/>
+Nefes al toparlan.<break time="10s"/>
+Kollarını salla.<break time="10s"/>
+30 saniye geçti.<break time="10s"/>
+Hazır ol.<break time="10s"/>
+Son 10 saniye.
+
+<!-- RUN 2 (3:00) -->
+Koş! <break time="3s"/>
+Güç seninle devam et.<break time="10s"/>
+Vücudunu dinle.<break time="10s"/>
+Birinci dakika başladı.<break time="10s"/>
+Tutarlı tempo.<break time="10s"/>
+Omuzlar rahat.<break time="10s"/>
+Bir dakika tamam.<break time="10s"/>
+İkinci dakika başladı.<break time="10s"/>
+Formunu koru.<break time="10s"/>
+100 adım daha.<break time="10s"/>
+İki dakika geçti.<break time="10s"/>
+Son bir dakika.<break time="10s"/>
+Son hızlanma.<break time="10s"/>
+Son 30 saniye.<break time="10s"/>
+Son 10 adım.<break time="10s"/>
+5<break time="1s"/>4<break time="1s"/>3<break time="1s"/>2<break time="1s"/>1 <break time="1s"/>
+Harika koştun <break time="3s"/>
+
+<!-- WALK 2 (1:00) -->
+Yürü! <break time="3s"/>
+Nefesini düzenle.<break time="10s"/>
+Adımlar hafif.<break time="10s"/>
+30 saniye geçti.<break time="10s"/>
+Hazır ol.<break time="10s"/>
+Son 10 saniye <break time="10s"/>
+
+<!-- RUN 3-6 would follow same pattern -->
+
+<!-- RUN 7 (Final 3:00) -->
+Koş! <break time="3s"/>
+Son tur ver her şeyi.<break time="10s"/>
+Zafer senin devam et.<break time="10s"/>
+Birinci dakika başladı.<break time="10s"/>
+Son tempo.<break time="10s"/>
+Tüm enerjinle.<break time="10s"/>
+Bir dakika tamam.<break time="10s"/>
+İkinci dakika başladı.<break time="10s"/>
+Son çaba.<break time="10s"/>
+100 adım daha.<break time="10s"/>
+İki dakika geçti.<break time="10s"/>
+Son bir dakika.<break time="10s"/>
+Tüm gücünle.<break time="10s"/>
+Son 30 saniye.<break time="10s"/>
+Son 10 adım.<break time="10s"/>
+5<break time="1s"/>4<break time="1s"/>3<break time="1s"/>2<break time="1s"/>1 <break time="1s"/>
+Mükemmeldin!<break time="3s"/>
+
+<!-- COOLDOWN (3:00) -->
+Yürü!<break time="3s"/>
+Tebrikler başardın.<break time="10s"/>
+Nefes sakin rahatla.<break time="10s"/>
+Birinci dakika.<break time="10s"/>
+Esnemeye hazırlan.<break time="10s"/>
+Kalp atışın yavaşlıyor.<break time="10s"/>
+Son dakika.<break time="10s"/>
+Harika bir antrenmandı
+</speak>

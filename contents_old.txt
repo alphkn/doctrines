@@ -1,0 +1,65 @@
+
+content_ssml= """
+ <speak>
+  Gün başladı. Koştun. Terledin. Şimdi zihin sırada. <break time="500ms"/> Dik dur.<break time="700ms"/>
+
+  Omuzlarını geriye al. <break time="400ms"/> Burnundan derin bir nefes çek.<break time="700ms"/>
+  Bu senin bedenin. Bu senin zihnin. Kontrol sende.<break time="1s"/>
+
+  Bugün seni zorlayabilecek ne var?<break time="500ms"/>
+  Baskı olacak. Karar alman gerekecek. Sınırını test edecekler.<break time="700ms"/>
+
+  Zorlandığında nasıl tepki vereceksin?<break time="500ms"/>
+  <emphasis level="strong">Sert olacağım. Sağlam duracağım. Kendimi ezdirmeyeceğim.</emphasis><break time="1s"/>
+
+  Günün sonunda nasıl bir adam olarak günü bitirmek istiyorsun?<break time="500ms"/>
+  Dik duran, sakin kalan, kontrolü bırakmayan bir adam. <break time="700ms"/> Söze gerek bırakmayan biri.<break time="1s"/>
+
+  Nefes al. 4 saniye. Tut. 4 saniye. Ver. 6 saniye. <break time="700ms"/>
+  Son nefesin sonunda sadece bunu söyle:<break time="500ms"/>
+  <emphasis level="moderate">Bugün hiçbir şey beni benden alamaz.</emphasis><break time="1s"/>
+
+  Şimdi suyunu iç. Küçük bir hamle. Netliği başlatır.<break time="700ms"/>
+  Bugün ezmen gerekirse ez, susman gerekirse sus.<break time="500ms"/>
+  Ama kendine karşı ne ezil, ne sus.<break time="700ms"/>
+  İnsanları sesinle değil, zihninle yöneteceksin.<break time="700ms"/>
+  Sert değil savruk, yumuşak değil zayıf olmayacaksın.<break time="1s"/>
+
+  Zihin hizada. Beden hazır.<break time="700ms"/>
+  Gün seni şekillendirmeyecek. Sen günü yöneteceksin.<break time="700ms"/>
+  Karar sende. Kontrol sende.<break time="700ms"/>
+  <emphasis level="strong">Sen günün üzerindesin.</emphasis>
+</speak>
+...
+"""
+content_raw = """
+Gün başladı. Koştun. Terledin. Şimdi zihin sırada. Dik dur.
+
+Omuzlarını geriye al. Burnundan derin bir nefes çek.
+Bu senin bedenin. Bu senin zihnin. Kontrol sende.
+
+Bugün seni zorlayabilecek ne var?
+Baskı olacak. Karar alman gerekecek. Sınırını test edecekler.
+
+Zorlandığında nasıl tepki vereceksin?
+Sert olacağım. Sağlam duracağım. Kendimi ezdirmeyeceğim.
+
+Günün sonunda nasıl bir adam olarak günü bitirmek istiyorsun?
+Dik duran, sakin kalan, kontrolü bırakmayan bir adam. Söze gerek bırakmayan biri.
+
+Nefes al. 4 saniye. Tut. 4 saniye. Ver. 6 saniye.
+Son nefesin sonunda sadece bunu söyle:
+Bugün hiçbir şey beni benden alamaz.
+
+Şimdi suyunu iç. Küçük bir hamle. Netliği başlatır.
+Bugün ezmen gerekirse ez, susman gerekirse sus.
+Ama kendine karşı ne ezil, ne sus.
+İnsanları sesinle değil, zihninle yöneteceksin.
+Sert değil savruk, yumuşak değil zayıf olmayacaksın.
+
+Zihin hizada. Beden hazır.
+Gün seni şekillendirmeyecek. Sen günü yöneteceksin.
+Karar sende. Kontrol sende.
+Sen günün üzerindesin.
+...
+"""
