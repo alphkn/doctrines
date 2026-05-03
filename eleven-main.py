@@ -8,7 +8,40 @@ from elevenlabs.client import ElevenLabs
 from elevenlabs import save
 from elevenlabs.types import VoiceSettings
 
+# =========================================================
+# FFMPEG — looked up relative to this script's folder.
+# Place ffmpeg.exe and ffprobe.exe next to eleven-main.py.
+# =========================================================
+
+import pydub.utils as _pydub_utils
+
+_BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
+FFMPEG_PATH  = os.path.join(_BASE_DIR, "ffmpeg.exe")
+FFPROBE_PATH = os.path.join(_BASE_DIR, "ffprobe.exe")
+
+if not os.path.isfile(FFMPEG_PATH):
+    raise FileNotFoundError(
+        f"ffmpeg.exe not found in project folder: {_BASE_DIR}\n"
+        "Download from https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip "
+        "and place ffmpeg.exe + ffprobe.exe next to this script."
+    )
+
+_original_which = _pydub_utils.which
+
+def _patched_which(name):
+    if name == "ffmpeg":
+        return FFMPEG_PATH
+    if name == "ffprobe":
+        return FFPROBE_PATH
+    return _original_which(name)
+
+_pydub_utils.which = _patched_which
+
 from pydub import AudioSegment
+
+AudioSegment.converter = FFMPEG_PATH
+AudioSegment.ffmpeg    = FFMPEG_PATH
+AudioSegment.ffprobe   = FFPROBE_PATH
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,16 +57,18 @@ logging.basicConfig(
 #https://elevenlabs.io/app/voice-library?voiceId=04SEuljgeCeHgjzEyD4c
 #https://elevenlabs.io/app/voice-library?voiceId=6H6FG7kAHiOf7LXnwus7
 
-API_KEY   = os.environ.get("ELEVEN_API_KEY", "YOUR_API_KEY_HERE")
+API_KEY   = os.environ.get("ELEVEN_API_KEY", "sk_369e7ba58cb0b5f5c9514d322629212bc0b06e8f0d9c505f")
 VOICE_ID  = "6H6FG7kAHiOf7LXnwus7"
 MODEL_ID  = "eleven_multilingual_v2"   # Recommended model for Turkish
 
-input_dir     = "input"
-output_dir    = "output"
-processed_dir = "processed"
-final_dir     = "final"
+input_dir     = "input"      # source text files
+output_dir    = "output"     # raw TTS audio (no silence yet)
+silenced_dir  = "silenced"   # silence added, ready for combine
+processed_dir = "processed"  # source text files after TTS
+final_dir     = "final"      # combined full series
 
 os.makedirs(output_dir, exist_ok=True)
+os.makedirs(silenced_dir, exist_ok=True)
 os.makedirs(processed_dir, exist_ok=True)
 os.makedirs(final_dir, exist_ok=True)
 
@@ -49,8 +84,8 @@ VOICE_SETTINGS = VoiceSettings(
     speed=0.90,
 )
 
-SILENCE_AT_START_MS = 1500
-SILENCE_BETWEEN_PARTS_MS = 2500
+SILENCE_AT_START_MS      = 3000
+SILENCE_BETWEEN_PARTS_MS = 2000
 
 # =========================================================
 
@@ -78,20 +113,56 @@ def get_series_name(filename):
     return None
 
 
-def add_leading_silence(mp3_path, duration_ms):
-    audio = AudioSegment.from_mp3(mp3_path)
+def apply_leading_silence(src_path, dst_path, duration_ms):
+    """
+    Read src_path, prepend silence, write to dst_path.
+    src_path and dst_path can be the same file.
+    """
+    audio = AudioSegment.from_mp3(src_path)
     silence = AudioSegment.silent(duration=duration_ms)
-    final_audio = silence + audio
-    final_audio.export(mp3_path, format="mp3", bitrate="192k")
-    logging.info(f"🔇 Added silence: {mp3_path}")
+    result = silence + audio
+    result.export(dst_path, format="mp3", bitrate="192k")
+    logging.info(f"🔇 Silence added: {dst_path}")
+
+
+def process_pending_silence():
+    """
+    Pick up any raw mp3s sitting in output/ that have not yet
+    been moved to silenced/.  Useful when a previous run
+    completed TTS but crashed before adding silence.
+    """
+    raw_files = glob.glob(os.path.join(output_dir, "*.mp3"))
+
+    if not raw_files:
+        return
+
+    logging.info(
+        f"🔁 Found {len(raw_files)} unsilenced file(s) in output/ — processing..."
+    )
+
+    for raw_path in sorted(raw_files):
+        filename = os.path.basename(raw_path)
+        dst_path = os.path.join(silenced_dir, filename)
+        try:
+            apply_leading_silence(raw_path, dst_path, SILENCE_AT_START_MS)
+            os.remove(raw_path)
+            logging.info(f"✅ Moved to silenced/: {filename}")
+        except Exception as e:
+            logging.warning(
+                f"⚠️  Could not add silence to '{filename}': {e}. "
+                f"Will retry on next run."
+            )
 
 
 def combine_all_series():
-
-    mp3_files = glob.glob(os.path.join(output_dir, "*.mp3"))
+    """
+    Combine parts from silenced/ into final/.
+    Skips series whose final file is already up-to-date.
+    """
+    mp3_files = glob.glob(os.path.join(silenced_dir, "*.mp3"))
 
     if not mp3_files:
-        logging.warning("No mp3 files found.")
+        logging.info("No files in silenced/ — nothing to combine.")
         return
 
     # =====================================================
@@ -107,8 +178,12 @@ def combine_all_series():
             continue
         grouped.setdefault(series_name, []).append(path)
 
+    if not grouped:
+        logging.info("No series found to combine.")
+        return
+
     # =====================================================
-    # COMBINE EACH SERIES — SKIP IF ALREADY COMBINED
+    # COMBINE EACH SERIES — SKIP IF ALREADY UP-TO-DATE
     # =====================================================
 
     for series_name, files in grouped.items():
@@ -117,10 +192,6 @@ def combine_all_series():
             final_dir, f"{series_name}_full.mp3"
         )
 
-        # Check if all parts are already present in output/
-        # by comparing against what was previously combined.
-        # Skip if the final file already exists AND none of
-        # the parts are newer than the final file.
         if os.path.exists(final_output_path):
             final_mtime = os.path.getmtime(final_output_path)
             newer_parts = [
@@ -195,7 +266,7 @@ else:
                 voice_id=VOICE_ID,
                 text=text,
                 model_id=MODEL_ID,
-                output_format="mp3_44100_192",
+                output_format="mp3_44100_128",
                 voice_settings=VOICE_SETTINGS,
             )
 
@@ -203,21 +274,17 @@ else:
             output_path = os.path.join(output_dir, base_name + ".mp3")
 
             save(audio, output_path)
-            logging.info(f"✔️  Generated audio: {output_path}")
-
-            # =============================================
-            # ADD LEADING SILENCE
-            # =============================================
-
-            add_leading_silence(output_path, SILENCE_AT_START_MS)
+            logging.info(f"✔️  Generated audio: output/{base_name}.mp3")
 
             # =============================================
             # MOVE SOURCE FILE TO PROCESSED
+            # Happens right after save() so the source is
+            # never re-sent to the API on the next run.
             # =============================================
 
             dest_path = os.path.join(processed_dir, os.path.basename(file_path))
             shutil.move(file_path, dest_path)
-            logging.info(f"📁 Moved source file to: {dest_path}")
+            logging.info(f"📁 Moved to processed/: {os.path.basename(file_path)}")
 
             success_count += 1
 
@@ -230,7 +297,15 @@ else:
     )
 
 # =========================================================
-# AUTO COMBINE — always runs regardless of input folder state
+# STAGE 2 — ADD SILENCE (output/ -> silenced/)
+# Runs even if input was empty, picks up leftovers too.
+# =========================================================
+
+process_pending_silence()
+
+# =========================================================
+# STAGE 3 — COMBINE (silenced/ -> final/)
+# Runs even if input was empty.
 # =========================================================
 
 combine_all_series()
