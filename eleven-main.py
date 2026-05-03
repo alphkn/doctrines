@@ -3,16 +3,22 @@ import glob
 import logging
 import re
 import shutil
+
 from elevenlabs.client import ElevenLabs
 from elevenlabs import save
 from elevenlabs.types import VoiceSettings
+
+from pydub import AudioSegment
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# --- SETTINGS ---
+# =========================================================
+# SETTINGS
+# =========================================================
+
 #https://elevenlabs.io/app/voice-library?voiceId=DsbR47WNEv8o9x37ib9X
 #https://elevenlabs.io/app/voice-library?voiceId=xqO6WRAnejFhRL0H6VSW
 #https://elevenlabs.io/app/voice-library?voiceId=04SEuljgeCeHgjzEyD4c
@@ -23,19 +29,20 @@ VOICE_ID  = "6H6FG7kAHiOf7LXnwus7"
 #VOICE_ID = "pNInz6obpgDQGcFmaJgB" # Adam (multilingual) — replace with your preferred voice ID
 MODEL_ID  = "eleven_multilingual_v2"   # Recommended model for Turkish
 
-input_dir     = "input"
-output_dir    = "output"
+
+input_dir = "input"
+output_dir = "output"
 processed_dir = "processed"
- 
+final_dir = "final"
+
 os.makedirs(output_dir, exist_ok=True)
 os.makedirs(processed_dir, exist_ok=True)
- 
-# --- VOICE SETTINGS (tuned for calm/telkin style) ---
-# speed:            0.7–1.2   | 0.80 = slow, calm delivery
-# stability:        0.0–1.0   | 0.80 = consistent, steady tone (higher = less emotional variation)
-# similarity_boost: 0.0–1.0   | 0.75 = balanced adherence to original voice
-# style:            0.0–1.0   | 0.15 = slight style emphasis without overdoing it
-# use_speaker_boost: True     = improves clarity and voice consistency
+os.makedirs(final_dir, exist_ok=True)
+
+# =========================================================
+# AUDIO SETTINGS
+# =========================================================
+
 VOICE_SETTINGS = VoiceSettings(
     stability=0.43,
     similarity_boost=0.82,
@@ -43,50 +50,195 @@ VOICE_SETTINGS = VoiceSettings(
     use_speaker_boost=True,
     speed=0.90,
 )
-  # passed separately in the API call
- 
-# ----------------
- 
+
+SILENCE_AT_START_MS = 1500
+SILENCE_BETWEEN_PARTS_MS = 2500
+
+# =========================================================
+
 client = ElevenLabs(api_key=API_KEY)
- 
- 
+
+# =========================================================
+# HELPERS
+# =========================================================
+
 def strip_xml_tags(text: str) -> str:
-    """Remove SSML/XML tags and return plain text."""
     clean = re.sub(r"<[^>]+>", " ", text)
     clean = re.sub(r"\s+", " ", clean).strip()
     return clean
- 
- 
-files = glob.glob(os.path.join(input_dir, "*.*"))
- 
+
+
+def get_series_name(filename):
+
+    """
+    character_stoa_deepseek_part_01.mp3
+    ->
+    character_stoa_deepseek
+    """
+
+    match = re.match(r"(.+)_part_\d+", filename)
+
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def add_leading_silence(mp3_path, duration_ms):
+
+    audio = AudioSegment.from_mp3(mp3_path)
+
+    silence = AudioSegment.silent(duration=duration_ms)
+
+    final_audio = silence + audio
+
+    final_audio.export(
+        mp3_path,
+        format="mp3",
+        bitrate="192k"
+    )
+
+    logging.info(f"🔇 Added silence: {mp3_path}")
+
+
+def combine_all_series():
+
+    mp3_files = glob.glob(
+        os.path.join(output_dir, "*.mp3")
+    )
+
+    if not mp3_files:
+        logging.warning("No mp3 files found.")
+        return
+
+    grouped = {}
+
+    # =====================================================
+    # GROUP FILES
+    # =====================================================
+
+    for path in mp3_files:
+
+        filename = os.path.basename(path)
+
+        series_name = get_series_name(filename)
+
+        if not series_name:
+            continue
+
+        grouped.setdefault(series_name, []).append(path)
+
+    # =====================================================
+    # COMBINE EACH SERIES
+    # =====================================================
+
+    for series_name, files in grouped.items():
+
+        logging.info(
+            f"🎬 Combining series: {series_name}"
+        )
+
+        files = sorted(files)
+
+        final_audio = AudioSegment.empty()
+
+        for mp3_file in files:
+
+            logging.info(f"➕ Adding: {mp3_file}")
+
+            audio = AudioSegment.from_mp3(mp3_file)
+
+            final_audio += audio
+
+            silence = AudioSegment.silent(
+                duration=SILENCE_BETWEEN_PARTS_MS
+            )
+
+            final_audio += silence
+
+        final_output_path = os.path.join(
+            final_dir,
+            f"{series_name}_full.mp3"
+        )
+
+        final_audio.export(
+            final_output_path,
+            format="mp3",
+            bitrate="192k"
+        )
+
+        logging.info(
+            f"🔥 Created final audio: {final_output_path}"
+        )
+
+# =========================================================
+# MAIN
+# =========================================================
+
+files = sorted(
+    glob.glob(os.path.join(input_dir, "*.*"))
+)
+
 if not files:
-    logging.warning("No files found in the input folder.")
+
+    logging.warning(
+        "No files found in input folder."
+    )
+
 else:
+
     success_count = 0
     failure_count = 0
- 
+
     for file_path in files:
+
         try:
-            logging.info(f"Processing file: {file_path}")
-            with open(file_path, "r", encoding="utf-8") as f:
+
+            logging.info(
+                f"Processing file: {file_path}"
+            )
+
+            with open(
+                file_path,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
                 content = f.read()
- 
-            ext = os.path.splitext(file_path)[1].lower()
- 
+
+            ext = os.path.splitext(
+                file_path
+            )[1].lower()
+
             if ext == ".xml":
-                # ElevenLabs does not support SSML — strip tags and use plain text
+
                 text = strip_xml_tags(content)
-                logging.info("XML file — SSML tags stripped, using plain text.")
+
+                logging.info(
+                    "XML detected — stripped tags."
+                )
+
             else:
+
                 text = content.strip()
-                logging.info("Using plain text input.")
- 
+
+                logging.info(
+                    "Using plain text input."
+                )
+
             if not text:
-                logging.warning(f"Empty content, skipping: {file_path}")
+
+                logging.warning(
+                    f"Empty content, skipping: {file_path}"
+                )
+
                 failure_count += 1
                 continue
- 
-            logging.info("Sending request to ElevenLabs API...")
+
+            logging.info(
+                "Sending request to ElevenLabs..."
+            )
+
             audio = client.text_to_speech.convert(
                 voice_id=VOICE_ID,
                 text=text,
@@ -94,22 +246,64 @@ else:
                 output_format="mp3_44100_192",
                 voice_settings=VOICE_SETTINGS,
             )
- 
-            base_name   = os.path.splitext(os.path.basename(file_path))[0]
-            output_path = os.path.join(output_dir, base_name + ".mp3")
+
+            base_name = os.path.splitext(
+                os.path.basename(file_path)
+            )[0]
+
+            output_path = os.path.join(
+                output_dir,
+                base_name + ".mp3"
+            )
+
             save(audio, output_path)
- 
-            logging.info(f"✔️  Generated audio: {output_path}")
- 
-            # Move the source file to processed/ to avoid re-processing
-            dest_path = os.path.join(processed_dir, os.path.basename(file_path))
+
+            logging.info(
+                f"✔️ Generated audio: {output_path}"
+            )
+
+            # =============================================
+            # ADD LEADING SILENCE
+            # =============================================
+
+            add_leading_silence(
+                output_path,
+                SILENCE_AT_START_MS
+            )
+
+            # =============================================
+            # MOVE SOURCE FILE
+            # =============================================
+
+            dest_path = os.path.join(
+                processed_dir,
+                os.path.basename(file_path)
+            )
+
             shutil.move(file_path, dest_path)
-            logging.info(f"📁 Moved source file to: {dest_path}")
- 
+
+            logging.info(
+                f"📁 Moved source file to: {dest_path}"
+            )
+
             success_count += 1
- 
+
         except Exception as e:
-            logging.error(f"❌ Error processing '{file_path}': {e}")
+
+            logging.error(
+                f"❌ Error processing '{file_path}': {e}"
+            )
+
             failure_count += 1
- 
-    logging.info(f"Batch complete: {success_count} succeeded, {failure_count} failed.")
+
+    logging.info(
+        f"Batch complete: "
+        f"{success_count} succeeded, "
+        f"{failure_count} failed."
+    )
+
+    # =====================================================
+    # AUTO COMBINE
+    # =====================================================
+
+    combine_all_series()
