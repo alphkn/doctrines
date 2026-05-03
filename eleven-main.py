@@ -37,11 +37,11 @@ os.makedirs(processed_dir, exist_ok=True)
 # style:            0.0–1.0   | 0.15 = slight style emphasis without overdoing it
 # use_speaker_boost: True     = improves clarity and voice consistency
 VOICE_SETTINGS = VoiceSettings(
-    stability=0.80,
-    similarity_boost=0.75,
-    style=0.15,
+    stability=0.43,
+    similarity_boost=0.82,
+    style=0.38,
     use_speaker_boost=True,
-    speed=0.80,   # 0.7–1.2, lower = slower
+    speed=0.90,
 )
   # passed separately in the API call
  
@@ -91,7 +91,7 @@ else:
                 voice_id=VOICE_ID,
                 text=text,
                 model_id=MODEL_ID,
-                output_format="mp3_44100_128",
+                output_format="mp3_44100_192",
                 voice_settings=VOICE_SETTINGS,
             )
  
