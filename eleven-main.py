@@ -85,7 +85,7 @@ VOICE_SETTINGS = VoiceSettings(
 )
 
 SILENCE_AT_START_MS      = 3000
-SILENCE_BETWEEN_PARTS_MS = 2000
+SILENCE_BETWEEN_PARTS_MS = 6000
 
 # =========================================================
 
